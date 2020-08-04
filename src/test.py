@@ -20,6 +20,7 @@ app = GraiaMiraiApplication(
     )
 )
 
+
 @bcc.receiver("GroupMessage")
 async def group_message_handler(app: GraiaMiraiApplication, message: MessageChain, group: Group, member: Member):
     print(group.id, member.id)
