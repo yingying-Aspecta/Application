@@ -15,7 +15,7 @@ from functools import partial
 from .context import enter_message_send_context
 from .entities import UploadMethods
 from .event.messages import (FriendMessage, GroupMessage,
-                                               TempMessage)
+                             TempMessage)
 from .message import BotMessage
 from .message.chain import MessageChain
 from .message.elements import external
@@ -25,7 +25,7 @@ from .friend import Friend
 from .group import (Group, GroupConfig, Member, MemberInfo)
 from .exceptions import InvaildArgument, InvaildSession
 from .utilles import (AppMiddlewareAsDispatcher, SinceVersion,
-                               raise_for_return_code, requireAuthenticated)
+                      raise_for_return_code, requireAuthenticated)
 
 
 class GraiaMiraiApplication:
@@ -35,11 +35,11 @@ class GraiaMiraiApplication:
     logger: AbstractLogger
 
     def __init__(self, *,
-        broadcast: Broadcast,
-        connect_info: Session,
-        session: Optional[ClientSession] = None,
-        logger: Optional[AbstractLogger] = None
-    ):
+                 broadcast: Broadcast,
+                 connect_info: Session,
+                 session: Optional[ClientSession] = None,
+                 logger: Optional[AbstractLogger] = None
+                 ):
         self.broadcast = broadcast
         self.connect_info = connect_info
         self.session = session or ClientSession(loop=broadcast.loop)
@@ -50,8 +50,8 @@ class GraiaMiraiApplication:
 
     def url_gen(self, path) -> str:
         return str(URL(str(self.connect_info.host)).parent / path)
-    
-    @SinceVersion(1,6,2)
+
+    @SinceVersion(1, 6, 2)
     async def getVersion(self, auto_set=True) -> Tuple:
         async with self.session.get(self.url_gen("about")) as response:
             response.raise_for_status()
@@ -74,7 +74,8 @@ class GraiaMiraiApplication:
 
     async def activeSession(self) -> NoReturn:
         if not self.connect_info.sessionKey:
-            raise InvaildSession("you should call 'authenticate' before this to get a sessionKey!")
+            raise InvaildSession(
+                "you should call 'authenticate' before this to get a sessionKey!")
         async with self.session.post(self.url_gen("verify"), json={
             "sessionKey": self.connect_info.sessionKey,
             "qq": self.connect_info.account
@@ -85,7 +86,8 @@ class GraiaMiraiApplication:
 
     async def signout(self) -> NoReturn:
         if not self.connect_info.sessionKey:
-            raise InvaildSession("you should call 'authenticate' before this to get a sessionKey!")
+            raise InvaildSession(
+                "you should call 'authenticate' before this to get a sessionKey!")
         async with self.session.post(self.url_gen("release"), json={
             "sessionKey": self.connect_info.sessionKey,
             "qq": self.connect_info.account
@@ -167,13 +169,12 @@ class GraiaMiraiApplication:
                 return external_component
             else:
                 return Image.fromExternal(external_component)
-            
 
     @requireAuthenticated
     async def sendFriendMessage(self, target: Union[Friend, int],
-        message: MessageChain, *,
-        quote: Optional[Union[Source, int]] = None
-    ) -> BotMessage:
+                                message: MessageChain, *,
+                                quote: Optional[Union[Source, int]] = None
+                                ) -> BotMessage:
         with enter_message_send_context(UploadMethods.Friend):
             async with self.session.post(self.url_gen("sendFriendMessage"), json={
                 "sessionKey": self.connect_info.sessionKey,
@@ -190,9 +191,9 @@ class GraiaMiraiApplication:
 
     @requireAuthenticated
     async def sendGroupMessage(self, group: Union[Group, int],
-        message: MessageChain, *,
-        quote: Optional[Union[Source, int]] = None
-    ) -> BotMessage:
+                               message: MessageChain, *,
+                               quote: Optional[Union[Source, int]] = None
+                               ) -> BotMessage:
         with enter_message_send_context(UploadMethods.Group):
             async with self.session.post(self.url_gen("sendGroupMessage"), json={
                 "sessionKey": self.connect_info.sessionKey,
@@ -206,14 +207,14 @@ class GraiaMiraiApplication:
                 data = await response.json()
                 raise_for_return_code(data)
                 return BotMessage(messageId=data['messageId'])
-    
+
     @requireAuthenticated
     async def sendTempMessage(self,
-        group: Union[Group, int],
-        target: Union[Member, int],
-        message: MessageChain, *,
-        quote: Optional[Union[Source, int]] = None
-    ) -> BotMessage:
+                              group: Union[Group, int],
+                              target: Union[Member, int],
+                              message: MessageChain, *,
+                              quote: Optional[Union[Source, int]] = None
+                              ) -> BotMessage:
         with enter_message_send_context(UploadMethods.Temp):
             async with self.session.post(self.url_gen("sendTempMessage"), json={
                 "sessionKey": self.connect_info.sessionKey,
@@ -231,8 +232,8 @@ class GraiaMiraiApplication:
 
     @requireAuthenticated
     async def revokeMessage(self,
-        target: Union[Source, BotMessage, int]
-    ) -> NoReturn:
+                            target: Union[Source, BotMessage, int]
+                            ) -> NoReturn:
         async with self.session.post(self.url_gen("recall"), json={
             "sessionKey": self.connect_info.sessionKey,
             "target": target.id if isinstance(target, (Source, BotMessage)) else id
@@ -240,7 +241,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-    
+
     @requireAuthenticated
     async def fetchMessage(self, count: int = 10) -> List[Union[GroupMessage, TempMessage, FriendMessage]]:
         async with self.session.get(str(URL(self.url_gen("fetchMessage")).with_query({
@@ -250,7 +251,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-            
+
             result = []
             for i in data['data']:
                 if i['type'] == "GroupMessage":
@@ -260,7 +261,7 @@ class GraiaMiraiApplication:
                 elif i['type'] == "TempMessage":
                     result.append(TempMessage.parse_obj(i))
             return result
-    
+
     @requireAuthenticated
     async def fetchLatestMessage(self, count: int = 10) -> List[Union[GroupMessage, TempMessage, FriendMessage]]:
         async with self.session.get(str(URL(self.url_gen("fetchLatestMessage")).with_query({
@@ -270,7 +271,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-            
+
             result = []
             for i in data['data']:
                 if i['type'] == "GroupMessage":
@@ -290,7 +291,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-            
+
             result = []
             for i in data['data']:
                 if i['type'] == "GroupMessage":
@@ -300,7 +301,7 @@ class GraiaMiraiApplication:
                 elif i['type'] == "TempMessage":
                     result.append(TempMessage.parse_obj(i))
             return result
-    
+
     @requireAuthenticated
     async def peekLatestMessage(self, count: int = 10) -> List[Union[GroupMessage, TempMessage, FriendMessage]]:
         async with self.session.get(str(URL(self.url_gen("peekLatestMessage")).with_query({
@@ -310,7 +311,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-            
+
             result = []
             for i in data['data']:
                 if i['type'] == "GroupMessage":
@@ -330,7 +331,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-            
+
             if data['data']['type'] == "GroupMessage":
                 return GroupMessage.parse_obj(data['data'])
             elif data['data']['type'] == "FriendMessage":
@@ -381,7 +382,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-    
+
     @requireAuthenticated
     async def unmute(self, group: Union[Group, int], member: Union[Member, int]) -> NoReturn:
         async with self.session.post(self.url_gen("unmute"), json={
@@ -392,7 +393,7 @@ class GraiaMiraiApplication:
             response.raise_for_status()
             data = await response.json()
             raise_for_return_code(data)
-    
+
     @requireAuthenticated
     async def kick(self, group: Union[Group, int], member: Union[Member, int], message: Optional[str] = None) -> NoReturn:
         async with self.session.post(self.url_gen("kick"), json={
@@ -443,7 +444,8 @@ class GraiaMiraiApplication:
     @requireAuthenticated
     async def getMemberInfo(self, member: Union[Member, int], group: Optional[Union[Group, int]] = None) -> MemberInfo:
         if not group and not isinstance(member, Member):
-            raise TypeError("you should give a Member instance if you cannot give a Group instance to me.")
+            raise TypeError(
+                "you should give a Member instance if you cannot give a Group instance to me.")
         if isinstance(member, Member) and not group:
             group: Group = member.group
         async with self.session.get(str(URL(self.url_gen("memberInfo")).with_query({
@@ -460,7 +462,8 @@ class GraiaMiraiApplication:
     @requireAuthenticated
     async def modifyMemberInfo(self, member: Union[Member, int], info: MemberInfo, group: Optional[Union[Group, int]] = None) -> NoReturn:
         if not group and not isinstance(member, Member):
-            raise TypeError("you should give a Member instance if you cannot give a Group instance to me.")
+            raise TypeError(
+                "you should give a Member instance if you cannot give a Group instance to me.")
         if isinstance(member, Member) and not group:
             group: Group = member.group
         async with self.session.post(self.url_gen("memberInfo"), json={
@@ -499,10 +502,12 @@ class GraiaMiraiApplication:
     @staticmethod
     async def auto_parse_by_type(original_dict: dict) -> BaseEvent:
         if not original_dict.get("type") and not isinstance(original_dict.get("type"), str):
-            raise InvaildArgument("you need to provide a 'type' field for automatic parsing")
+            raise InvaildArgument(
+                "you need to provide a 'type' field for automatic parsing")
         event_type = Broadcast.findEvent(original_dict.get("type"))
         if not event_type:
-            raise ValueError("we cannot find a such event: {}".format(original_dict.get("type")))
+            raise ValueError("we cannot find a such event: {}".format(
+                original_dict.get("type")))
         return await run_always_await(event_type.parse_obj({
             k: v for k, v in original_dict.items() if k != "type"
         }))
@@ -522,10 +527,11 @@ class GraiaMiraiApplication:
                     try:
                         event = await self.auto_parse_by_type(received_data)
                     except ValueError as e:
-                        self.logger.error("".join(["received a unknown event: ", received_data.get("type"), str(received_data)]))
+                        self.logger.error("".join(
+                            ["received a unknown event: ", received_data.get("type"), str(received_data)]))
                         continue
                     self.broadcast.postEvent(event)
-    
+
     @requireAuthenticated
     async def http_fetchmessage_poster(self, delay=0.5, fetch_num=10):
         while True:
@@ -543,20 +549,21 @@ class GraiaMiraiApplication:
         await self.authenticate()
         await self.activeSession()
         await self.broadcast.layered_scheduler(
-            listener_generator=self.broadcast.default_listener_generator(ApplicationLaunched),
+            listener_generator=self.broadcast.default_listener_generator(
+                ApplicationLaunched),
             event=ApplicationLaunched(self)
         )
 
         # 自动变化fetch方式
         fetch_method = self.http_fetchmessage_poster if not self.connect_info.websocket else self.ws_all_poster
         config: MiraiConfig = await self.getConfig()
-        if not self.connect_info.websocket: # 不启用 websocket
+        if not self.connect_info.websocket:  # 不启用 websocket
             self.logger.info("using websocket to receive event")
-            if config.enableWebsocket: # 配置中已经启用
+            if config.enableWebsocket:  # 配置中已经启用
                 await self.modifyConfig(enableWebsocket=False)
-        else: # 启用ws
+        else:  # 启用ws
             self.logger.info("using pure websocket to receive event")
-            if not config.enableWebsocket: # 配置中没启用
+            if not config.enableWebsocket:  # 配置中没启用
                 await self.modifyConfig(enableWebsocket=True)
 
         self.logger.info("event reveiver running...")
@@ -566,7 +573,8 @@ class GraiaMiraiApplication:
         from .event.lifecycle import ApplicationShutdowned
         self.logger.info("application shutdowning...")
         await self.broadcast.layered_scheduler(
-            listener_generator=self.broadcast.default_listener_generator(ApplicationShutdowned),
+            listener_generator=self.broadcast.default_listener_generator(
+                ApplicationShutdowned),
             event=ApplicationShutdowned(self)
         )
         await self.signout()
@@ -582,7 +590,8 @@ class GraiaMiraiApplication:
             try:
                 loop.run_until_complete(self.shutdown())
             except:
-                self.logger.error("it seems our shutdown operator has been failed...check your headless client alive.")
+                self.logger.error(
+                    "it seems our shutdown operator has been failed...check your headless client alive.")
 
     def subscribe_atexit(self, loop=None):
         loop = loop or self.broadcast.loop
