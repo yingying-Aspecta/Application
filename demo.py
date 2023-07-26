@@ -77,3 +77,6 @@ async def friend_message_listener(app: GraiaMiraiApplication, friend: Friend):
     # print(friend.id)
 
 app.launch_blocking()
+
+
+
